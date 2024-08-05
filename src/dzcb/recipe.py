@@ -15,6 +15,7 @@ import dzcb.anytone
 import dzcb.data
 import dzcb.farnsworth
 import dzcb.gb3gf
+import dzcb.opengd77
 import dzcb.log
 import dzcb.model
 import dzcb.output.dmrconfig
@@ -256,6 +257,8 @@ class CodeplugRecipe:
         Otherwise a sequence of Path to farnsworth template conf files is expected.
     :param output_gb3gf: if True, target OpenGD77 via GB3BF CSV import tool
         No other models are supported at this time.
+    :param output_opengd77: if True, target OpenGD77 CPS native CSVs
+        No other models are supported at this time.
     """
 
     # input control
@@ -306,6 +309,7 @@ class CodeplugRecipe:
         converter=bool_or_sequence_of_maybe_path,
     )
     output_gb3gf = attr.ib(default=None)
+    output_opengd77 = attr.ib(default=None)
 
     # additional options
     repeaterbook_states = attr.ib(default=dzcb.repeaterbook.REPEATERBOOK_DEFAULT_STATES)
@@ -346,6 +350,11 @@ class CodeplugRecipe:
                         radio, ", ".join(dzcb.gb3gf.SUPPORTED_RADIOS)
                     )
                 )
+
+    @output_opengd77.validator
+    def _output_opengd77_validator(self, attribute, value):
+        if value in (None, True, False):
+            return
 
     def initialize(self, output_dir):
         self._output_dir = append_dir_and_create(output_dir).resolve()
@@ -589,11 +598,23 @@ class CodeplugRecipe:
                     output_dir=opengd77_outdir,
                 )
 
+    def opengd77(self):
+        # Opengd77 CPS CSV
+        if not self.output_opengd77:
+            return  # False or None, skip output
+        opengd77_outdir = append_dir_and_create(self.output_dir, "opengd77")
+        dzcb.opengd77.Codeplug_to_opengd77_csv(
+            cp=self._codeplug,
+            output_dir=opengd77_outdir,
+        )
+
+
     def output(self):
         self.anytone()
         self.dmrconfig()
         self.farnsworth()
         self.gb3gf()
+        self.opengd77()
 
     def deinitialize(self):
         dzcb.log.deinit_logging()

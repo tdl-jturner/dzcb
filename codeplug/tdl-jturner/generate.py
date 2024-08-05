@@ -23,5 +23,5 @@ CodeplugRecipe(
     exclude=cp_dir / "exclude.csv",
     order=cp_dir / "order.csv",
     replacements=cp_dir / "replacements.csv",
-    output_gb3gf=True
+    output_opengd77=True
 ).generate(output / cp_dir.name)

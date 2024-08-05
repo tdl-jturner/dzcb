@@ -8,6 +8,7 @@ import argparse
 
 import dzcb.anytone
 import dzcb.gb3gf
+import dzcb.opengd77
 import dzcb.recipe
 import dzcb.repeaterbook
 
@@ -136,6 +137,14 @@ if __name__ == "__main__":
              "for the given radio types. If no radios are provided, "
              "use default: ({})".format(" ".join(dzcb.gb3gf.DEFAULT_SUPPORTED_RADIOS)),
     )
+    parser.add_argument(
+        "--opengd77",
+        nargs="*",
+        metavar="RADIO",
+        help="Generate GB3GF CSV files in the 'opengd77' subdir "
+             "for the given radio types. If no radios are provided, "
+             "use default: ({})".format(" ".join(dzcb.opengd77.DEFAULT_SUPPORTED_RADIOS)),
+    )
     parser.add_argument("outdir", help="Write codeplug files to this directory")
     args = parser.parse_args()
 
@@ -157,4 +166,5 @@ if __name__ == "__main__":
         output_dmrconfig=is_specified(args.dmrconfig_template),
         output_farnsworth=is_specified(args.farnsworth_template_json),
         output_gb3gf=is_specified(args.gb3gf),
+        output_opengd77=is_specified(args.opengd77),
     ).generate(output_dir=args.outdir)

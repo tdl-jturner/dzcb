@@ -163,6 +163,8 @@ class Power(ConvertibleEnum):
     @classmethod
     def from_any(cls, v):
         """Passable as an attr converter."""
+        if v == "":
+            v = "Low"
         if isinstance(v, str):
             # use title case string
             v = v.title()

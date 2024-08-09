@@ -96,13 +96,27 @@ def Codeplug_from_zone_dicts(zone_dicts):
     zones = list()
 
     def update_static_talkgroups(ch):
+        grouplist = None
+
+        # Dedup group lists that are the same contacts
+        gl_name = (';'.join(t.name for t in ch.static_talkgroups))
+        for gl in grouplists:
+            if (';'.join(c.name for c in gl.contacts)) == gl_name:
+                grouplist = gl
+                code = gl.name[:4]
+                logger.info("reusing grouplist {} for {}".format(code, ch.name))
+        
+        if grouplist == None:
+            code = ch.code
+            grouplist = GroupList(
+                name="{} TGS".format(ch.code or ch.name[:5]),
+                contacts=ch.static_talkgroups,
+            )
+            grouplists.append(grouplist)
+            logger.info("created new grouplist {} for {}".format(code, ch.name))
+
         contacts.update(ch.static_talkgroups)
-        grouplist = GroupList(
-            name="{} TGS".format(ch.code or ch.name[:5]),
-            contacts=ch.static_talkgroups,
-        )
-        grouplists.append(grouplist)
-        return attr.evolve(ch, grouplist=grouplist)
+        return attr.evolve(ch, code=code, grouplist=grouplist)
 
     all_channels = {}
     for zname, zchannels in zone_dicts.items():

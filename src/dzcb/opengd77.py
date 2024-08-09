@@ -36,7 +36,6 @@ value_replacements = {
 }
 
 power_map = {
-    # TODO: Needs confirmation
     # P1: 50mW
     # P2: 250mW
     # P3: 500mW
@@ -46,8 +45,8 @@ power_map = {
     # P7: 3W
     # P8: 4W
     # P9: 5W
-    "Low": "P5", #1W
-    "Medium": "P7", #3W
+    "Low": "P3", #500mW
+    "Medium": "P6", #2W
     "High": "P9", #5W
     "Turbo": "P9", #5W 
 }
@@ -89,6 +88,8 @@ def Codeplug_to_opengd77_csv(cp, output_dir):
         "Latitude",
         "Longitude"
     ]
+    
+    assigned_tg_lists = []
     with open("{}/Channels.csv".format(output_dir), "w", newline="") as f:
         csvw = csv.DictWriter(f, channel_fields, delimiter=",")
         csvw.writeheader()
@@ -99,9 +100,6 @@ def Codeplug_to_opengd77_csv(cp, output_dir):
                     "RX Tone": channel.tone_decode or "None",
                     "TX Tone": channel.tone_encode or "None",
                     "Bandwidth (kHz)": channel.bandwidth.flattened([Bandwidth._25, Bandwidth._125]).value
-                    # "Colour Code": "",
-                    # "TG List": "",
-                    # "Timeslot": "",
                 }
             else:
                 d = {
@@ -113,6 +111,7 @@ def Codeplug_to_opengd77_csv(cp, output_dir):
                     "Bandwidth (kHz)": "None",
                     "Timeslot": 1
                 }
+                assigned_tg_lists.append(d["TG List"])
                 if channel.talkgroup:
                     d["Contact"] = channel.talkgroup.name_with_timeslot
                     contacts.add(channel.talkgroup)
@@ -139,6 +138,9 @@ def Codeplug_to_opengd77_csv(cp, output_dir):
         csvw.writeheader()
         n_grouplists = len(cp.grouplists)
         for gl in cp.grouplists:
+            if gl.name not in assigned_tg_lists:
+                logger.info("Skipping {} as it is not used".format(gl.name))
+                continue
             if n_grouplists > TG_LIST_MAX and gl.name in TG_LIST_OVERFLOW:
                 n_grouplists -= 1
                 continue

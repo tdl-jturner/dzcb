@@ -99,7 +99,7 @@ def proximity_zones(proximity_zones_csv):
 def matches_criteria(repeater, criteria):
     for field, value in criteria.items():
         # XXX: maybe need a regex match here...
-        if str(value).lower() != str(repeater.get(field, "")).lower():
+        if value != "" and str(value).lower() != str(repeater.get(field, "")).lower():
             return False
     return True
 
@@ -169,7 +169,7 @@ def normalize_tone(tone):
     return tone if tone.upper() not in ("", "CSQ") else k7abd.OFF
 
 
-def repeater_to_k7abd_row(repeater, zone_name, name_format=None):
+def repeater_to_analog_k7abd_row(repeater, zone_name, name_format=None):
     if name_format is None:
         name_format = REPEATERBOOK_DEFAULT_NAME_FORMAT
     return {
@@ -184,25 +184,57 @@ def repeater_to_k7abd_row(repeater, zone_name, name_format=None):
         k7abd.TX_PROHIBIT: k7abd.OFF,
     }
 
+def repeater_to_digital_k7abd_row(repeater, zone_name, name_format=None):
+    if name_format is None:
+        name_format = REPEATERBOOK_DEFAULT_NAME_FORMAT
+    return {
+        k7abd.ZONE: zone_name,
+        k7abd.CHANNEL_NAME: name_format.format(**repeater).strip(),
+        k7abd.POWER: "High",
+        k7abd.RX_FREQ: repeater["Frequency"],
+        k7abd.TX_FREQ: repeater["Input Freq"] or repeater["Frequency"],
+        k7abd.COLOR_CODE: repeater["DMR Color Code"] ,
+        k7abd.TALK_GROUP: "Local 1",
+        k7abd.TIMESLOT: 1,
+        k7abd.CALL_TYPE: "Group Call",
+        k7abd.TX_PERMIT: "Always"
+    }
+
 
 def zones_to_k7abd(input_csv, output_dir, states=None, name_format=None):
     repeaters = list(iter_cached_repeaters(states=states))
+    total_channels = 0
     for name, slug, zone in proximity_zones(input_csv):
-        out_file = Path(output_dir) / "Analog__{}.csv".format(slug)
-        total_channels = 0
-        with open(out_file, "w", newline="") as out:
-            csvw = csv.DictWriter(
-                out,
-                fieldnames=k7abd.ANALOG_CSV_FIELDS,
-            )
-            csvw.writeheader()
-            for repeater in filter_repeaters(repeaters, zone):
-                csvw.writerow(
-                    repeater_to_k7abd_row(
-                        repeater, zone_name=name, name_format=name_format
-                    )
+        if "DMR" in zone and zone["DMR"] == "Yes":
+            out_file = Path(output_dir) / "Digital-Others__{}.csv".format(slug)
+            with open(out_file, "w", newline="") as out:
+                csvw = csv.DictWriter(
+                    out,
+                    fieldnames=k7abd.DIGITAL_CSV_FIELDS
                 )
-                total_channels += 1
+                csvw.writeheader()
+                for repeater in filter_repeaters(repeaters, zone):
+                    csvw.writerow(
+                        repeater_to_digital_k7abd_row(
+                            repeater, zone_name=name, name_format=name_format
+                        )
+                    )
+                    total_channels += 1
+        else:
+            out_file = Path(output_dir) / "Analog__{}.csv".format(slug)
+            with open(out_file, "w", newline="") as out:
+                csvw = csv.DictWriter(
+                    out,
+                    fieldnames=k7abd.ANALOG_CSV_FIELDS,
+                )
+                csvw.writeheader()
+                for repeater in filter_repeaters(repeaters, zone):
+                    csvw.writerow(
+                        repeater_to_analog_k7abd_row(
+                            repeater, zone_name=name, name_format=name_format
+                        )
+                    )
+                    total_channels += 1
         logger.debug(
             "Generate '%s' k7abd zones (%s channels) to '%s'",
             name,

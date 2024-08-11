@@ -65,6 +65,25 @@ ANALOG_CSV_FIELDS = [
     CTCSS_ENCODE,
     TX_PROHIBIT,
 ]
+ZONE_NAME = "Zone Name"
+COMMENT = "Comment"
+COLOR_CODE = "Color Code"
+TALK_GROUP = "Talk Group"
+TIMESLOT = "TimeSlot"
+CALL_TYPE = "Call Type"
+TX_PERMIT = "TX Permit"
+DIGITAL_CSV_FIELDS = [
+    ZONE,
+    CHANNEL_NAME,
+    POWER,
+    RX_FREQ,
+    TX_FREQ,
+    COLOR_CODE,
+    TALK_GROUP,
+    TIMESLOT,
+    CALL_TYPE,
+    TX_PERMIT
+]
 
 
 def Talkgroups_map_from_csv(talkgroups_csv):
